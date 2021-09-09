@@ -1,0 +1,25 @@
+{
+    "name":"Codex Browser Shell",
+    "description":"Use OpenAI's Codex API to manipulate browser DOM.",
+    "manifest_version":2,
+    "version":"0.1",
+    "content_scripts":[
+        {
+            "matches":[
+                "*://*/*"
+            ],
+            "js":[
+                "js/content.js"
+            ],
+            "run_at":"document_end"
+        }
+    ],
+    "permissions":[
+        "activeTab"
+    ],
+    "icons":{
+        "128":"icons/128.png",
+        "48":"icons/48.png",
+        "16":"icons/16.png"
+    }
+}

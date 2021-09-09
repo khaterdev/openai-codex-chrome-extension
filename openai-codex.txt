@@ -1,0 +1,139 @@
+/* I start by writing commands and you convert it to code */
+/* Command: Write a json file that has name=Codex */
+{
+    "name":"Codex"
+}
+
+/* Command: Write a Chrome Extension Manifest json file for an extension named: "Codex Browser Shell"
+And its description is: "Use OpenAI's Codex API to manipulate browser DOM.".
+The extension doesn't need permission to other tabs other than the current active tab.
+The extension doesn't need to work in background  and only have one content script called content.js.
+The content script should only run after the page finishes loading.
+The content script should work with all URLs.
+The extension has icons of all sizes in the "/icons" directory.
+*/
+{
+    "name":"Codex Browser Shell",
+    "description":"Use OpenAI's Codex API to manipulate browser DOM.",
+    "manifest_version":2,
+    "version":"0.1",
+    "content_scripts":[
+        {
+            "matches":[
+                "*://*/*"
+            ],
+            "js":[
+                "content.js"
+            ],
+            "run_at":"document_end"
+        }
+    ],
+    "permissions":[
+        "activeTab"
+    ],
+    "icons":{
+        "128":"icons/128.png",
+        "48":"icons/48.png",
+        "32":"icons/32.png"
+    }
+}
+
+/* Command: Write content.js script file. The file contents:
+Create a function called "showShellInput" that includes a new input element.
+    The input should have id 'shellInput'.
+    The input should have a 0.7 transparent black background and a lightgreen text.
+    The input should be always at the bottom of the page.
+    The input should have a width of 100% and a height of 200px.
+    The input should have the highest z-index top piriority.
+    The input should have text size of 32px and bold font.
+    The text inside the input should be editable.
+    The text inside the input should be aligned center.
+    The input should have the autocomplete attribute set to 'off'.
+    Append the input element to the end of the page body.
+End the "showShellInput" function content.
+*/
+function showShellInput(){
+    let input = document.createElement('input');
+    input.id = 'shellInput';
+    input.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    input.style.color = 'lightgreen';
+    input.style.position = 'fixed';
+    input.style.bottom = '0';
+    input.style.width = '100%';
+    input.style.height = '200px';
+    input.style.zIndex = '9999';
+    input.style.fontSize = '32px';
+    input.style.fontWeight = 'bold';
+    input.style.textAlign = 'center';
+    input.setAttribute('autocomplete', 'off');
+    document.body.appendChild(input);
+}
+
+/* Command: Call the "showShellInput function */
+showShellInput();
+
+/* Command: Create a variable called "globalCommand" with its content equals to:
+'/* I start by visiting ' + window.location.href + ', and incrementally modify it via <script> injection. Written for Chrome. */\n/* COMMAND: Add "Hello World", by adding an HTML DOM node */\nvar helloWorld = document.createElement(\'div\');\nhelloWorld.innerHTML = \'Hello World\';\ndocument.body.appendChild(helloWorld);\n/* COMMAND: remove the previous added child */\ndocument.body.removeChild(helloWorld);\n'
+*/
+var globalCommand = '/* I start by visiting ' + window.location.href + ', and incrementally modify it via <script> injection. Written for Chrome. */\n/* COMMAND: Add "Hello World", by adding an HTML DOM node */\nvar helloWorld = document.createElement(\'div\');\nhelloWorld.innerHTML = \'Hello World\';\ndocument.body.appendChild(helloWorld);\n/* COMMAND: remove the previous added child */\ndocument.body.removeChild(helloWorld);\n';
+
+/* Command: Create a function called "requestAPI".
+    Check the passed prompt and return if it is empty.
+    Modify the passed prompt to equal:
+        '/* COMMAND: ' + prompt + ' */\n'
+    Append the global command variable with the modified prompt.
+    The function should make a request to "https://api.openai.com/v1/engines/davinci-codex/completions".
+    Pass the global command as a prompt.
+    Temperature should be 0.
+    Max tokens should be 1000.
+    Stop should be "/* COMMAND:"
+    Make the request.
+    Split the output text by new line.
+    Remove the last line.
+    Join the lines.
+    Execute response as JavaScript code using eval function.
+    Append the modified output text to the global command with \n at the end.
+*/
+function requestAPI(prompt){
+    if(prompt === ''){
+        return;
+    }
+    prompt = '/* COMMAND: ' + prompt + ' */\n';
+    globalCommand += prompt;
+    let url = 'https://api.openai.com/v1/engines/davinci-codex/completions';
+    let params = {
+        prompt: globalCommand,
+        temperature: 0,
+        max_tokens: 1000,
+        stop: '/* COMMAND:',
+    };
+    let options = {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + '<YOUR_API_KEY>'
+        },
+        body: JSON.stringify(params)
+    };
+    fetch(url, options)
+        .then(response => response.json())
+        .then(data => {
+            let output = data.choices[0].text;
+            output = output.split('\n');
+            output.pop();
+            output = output.join('\n');
+            eval(output);
+            globalCommand += output + '\n';
+        })
+        .catch(error => console.log(error));
+}
+
+/* Command: Add listener to the shell input that fires when the user presses the enter key.
+    When the listener fires, the input content should be passed to a function called "requestAPI" and empty the input content.
+*/
+document.getElementById('shellInput').addEventListener('keyup', function(event){
+    if(event.keyCode === 13){
+        requestAPI(this.value);
+        this.value = '';
+    }
+});
